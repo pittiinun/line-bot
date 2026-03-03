@@ -1,9 +1,15 @@
 const express = require('express');
 const line = require('@line/bot-sdk');
 
+const mongoose = require("mongoose");
+
+mongoose.connect(process.env.MONGODB_URI)
+  .then(() => console.log("MongoDB Connected ✅"))
+  .catch(err => console.log(err));
+
 const config = {
-  channelAccessToken: 'UNLcgjfEvGNEcrUuhQPGmYwLrFG0cMsP5WGRyM7tczaoqK02ZbbCJuTt53jR4bKjYJ6DurypNqTXHFFgIjpO9TmHYqRei+xj9PBP+jfW2PTpuEc/Ps/1YzKDMiUiBULSULC1K0IC4qzc9VwGVooxFgdB04t89/1O/w1cDnyilFU=',
-  channelSecret: 'b2cc7caa20f6f8eeec32b6e599eb1eb4'
+  channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN,
+  channelSecret: process.env.CHANNEL_SECRET
 };
 
 const app = express();
