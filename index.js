@@ -3,6 +3,8 @@ const line = require('@line/bot-sdk');
 
 const mongoose = require("mongoose");
 
+const Message = require("./models/Message");
+
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log("MongoDB Connected ✅"))
   .catch(err => console.log(err));
@@ -23,12 +25,24 @@ app.post('/webhook', line.middleware(config), (req, res) => {
     .catch(err => console.error(err));
 });
 
-function handleEvent(event) {
+async function handleEvent(event) {
   if (event.type !== 'message' || event.message.type !== 'text') {
-    return Promise.resolve(null);
+    return null;
   }
 
-  const echo = { type: 'text', text: event.message.text };
+  // 💾 บันทึกลง MongoDB
+  await Message.create({
+    userId: event.source.userId,
+    message: event.message.text
+  });
+
+  console.log("Saved to MongoDB ✅");
+
+  const echo = { 
+    type: 'text', 
+    text: "บันทึกข้อความแล้ว ✅" 
+  };
+
   return client.replyMessage(event.replyToken, echo);
 }
 
