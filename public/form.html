@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>เพิ่มการบ้าน</title>
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+</head>
+<body>
+  <h2>เพิ่มการบ้าน</h2>
+
+  <form id="form">
+    <input id="subject" placeholder="วิชา" required><br><br>
+    <input id="topic" placeholder="เรื่อง" required><br><br>
+    <input type="date" id="dueDate" required><br><br>
+    <button type="submit">บันทึก</button>
+  </form>
+
+<script>
+liff.init({ liffId: "2009308037-Gdt715vP" });
+
+document.getElementById("form").addEventListener("submit", async e => {
+  e.preventDefault();
+
+  const profile = await liff.getProfile();
+
+  await fetch("/save-homework", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({
+      userId: profile.userId,
+      subject: subject.value,
+      topic: topic.value,
+      dueDate: dueDate.value
+    })
+  });
+
+  alert("บันทึกเรียบร้อย!");
+  liff.closeWindow();
+});
+</script>
+</body>
+</html>

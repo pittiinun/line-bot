@@ -1,14 +1,13 @@
-const express = require('express');
-const line = require('@line/bot-sdk');
+const express = require("express");
+const line = require("@line/bot-sdk");
 
 const mongoose = require("mongoose");
 
-const Message = require("./models/Message");
+
 
 const Homework = require("./models/Homework");
 
-// เก็บสถานะการกรอกของแต่ละ user
-const userState = {};
+
 
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log("MongoDB Connected ✅"))
@@ -22,12 +21,13 @@ const config = {
 const app = express();
 const client = new line.Client(config);
 
-app.post('/webhook', line.middleware(config), (req, res) => {
-  res.status(200).end();
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(express.static("public"));
 
-  Promise
-    .all(req.body.events.map(handleEvent))
-    .catch(err => console.error(err));
+app.post("/webhook", line.middleware(config), (req, res) => {
+  res.status(200).end();
+  Promise.all(req.body.events.map(handleEvent));
 });
 
 async function handleEvent(event) {
@@ -35,67 +35,57 @@ async function handleEvent(event) {
     return null;
   }
 
-  const userId = event.source.userId;
-  const text = event.message.text;
+  if (event.message.text === "ดูการบ้าน") {
+    const userId = event.source.userId;
+    const list = await Homework.find({ userId });
 
-  // ===== กดเมนูการบ้าน =====
-  if (text === "การบ้าน") {
-    userState[userId] = { step: 1 };
+    if (list.length === 0) {
+      return client.replyMessage(event.replyToken, {
+        type: "text",
+        text: "ยังไม่มีการบ้าน"
+      });
+    }
+
+    let message = "📚 รายการการบ้าน\n\n";
+    list.forEach((hw, i) => {
+      message += `${i+1}. ${hw.subject} - ${hw.topic}\nกำหนดส่ง: ${hw.dueDate}\n\n`;
+    });
+
     return client.replyMessage(event.replyToken, {
       type: "text",
-      text: "📚 วิชาอะไร?"
+      text: message
     });
-  }
-
-  // ===== กำลังกรอกข้อมูล =====
-  if (userState[userId]) {
-
-    // STEP 1: วิชา
-    if (userState[userId].step === 1) {
-      userState[userId].subject = text;
-      userState[userId].step = 2;
-
-      return client.replyMessage(event.replyToken, {
-        type: "text",
-        text: "📖 เรื่องอะไร?"
-      });
-    }
-
-    // STEP 2: เรื่อง
-    if (userState[userId].step === 2) {
-      userState[userId].topic = text;
-      userState[userId].step = 3;
-
-      return client.replyMessage(event.replyToken, {
-        type: "text",
-        text: "📅 กำหนดส่งเมื่อไหร่?"
-      });
-    }
-
-    // STEP 3: กำหนดส่ง
-    if (userState[userId].step === 3) {
-
-      await Homework.create({
-        userId,
-        subject: userState[userId].subject,
-        topic: userState[userId].topic,
-        dueDate: text
-      });
-
-      delete userState[userId];
-
-      return client.replyMessage(event.replyToken, {
-        type: "text",
-        text: "✅ บันทึกการบ้านเรียบร้อยแล้ว!"
-      });
-    }
   }
 
   return null;
 }
 
+app.post("/save-homework", async (req, res) => {
+  const { userId, subject, topic, dueDate } = req.body;
+
+  await Homework.create({
+    userId,
+    subject,
+    topic,
+    dueDate
+  });
+
+  res.json({ success: true });
+});
+
+app.get("/get-homework/:userId", async (req, res) => {
+  const data = await Homework.find({ userId: req.params.userId });
+  res.json(data);
+});
+
+app.delete("/delete-homework/:id", async (req, res) => {
+  await Homework.findByIdAndDelete(req.params.id);
+  res.json({ success: true });
+});
+
 const PORT = process.env.PORT || 3000;
 
+
 app.listen(PORT, () => {
-  console.log('Server running on port ' + PORT);
+  console.log("Server running on port " + PORT);
 });
