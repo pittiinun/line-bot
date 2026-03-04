@@ -2,70 +2,24 @@
 <html>
 <head>
   <title>เพิ่มการบ้าน</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
-  <style>
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      background: linear-gradient(135deg, #667eea, #764ba2);
-      padding: 20px;
-    }
 
-    h2 {
-      text-align: center;
-      color: white;
-      margin-bottom: 30px;
-    }
-
-    form {
-      background: white;
-      padding: 25px;
-      border-radius: 20px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-    }
-
-    input {
-      width: 100%;
-      padding: 15px;
-      margin-bottom: 15px;
-      border-radius: 12px;
-      border: 2px solid #667eea;
-      font-size: 16px;
-      transition: 0.3s;
-    }
-
-    input:focus {
-      border-color: #ff6b6b;
-      outline: none;
-      box-shadow: 0 0 10px rgba(255,107,107,0.4);
-    }
-
-    button {
-      width: 100%;
-      padding: 15px;
-      border-radius: 15px;
-      border: none;
-      font-size: 18px;
-      font-weight: bold;
-      background: linear-gradient(45deg, #ff6b6b, #ff9f43);
-      color: white;
-      cursor: pointer;
-      transition: 0.3s;
-    }
-
-    button:hover {
-      transform: scale(1.05);
-    }
-  </style>
 </head>
 
 <body>
   <h2>📚 เพิ่มการบ้าน</h2>
 
   <form id="form">
-    <input id="subject" placeholder="📖 วิชา" required>
-    <input id="topic" placeholder="📝 เรื่อง" required>
-    <input type="date" id="dueDate" required>
+    <input id="subject" placeholder="📖 วิชา" required><br><br>
+    <input id="topic" placeholder="✏️ เรื่อง" required><br><br>
+
+    <label>📅 กำหนดส่ง</label><br>
+    <input type="date" id="dueDate" required><br><br>
+
     <button type="submit">บันทึกการบ้าน</button>
   </form>
 
