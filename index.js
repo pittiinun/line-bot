@@ -1,91 +1,95 @@
+require("dotenv").config();
 const express = require("express");
-const line = require("@line/bot-sdk");
-
 const mongoose = require("mongoose");
-
-
+const cors = require("cors");
 
 const Homework = require("./models/Homework");
 
+const app = express();
+app.use(express.json());
+app.use(cors());
+app.use(express.static("public"));
 
-
+/* =======================
+   MongoDB Connect
+======================= */
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log("MongoDB Connected ✅"))
   .catch(err => console.log(err));
 
-const config = {
-  channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN,
-  channelSecret: process.env.CHANNEL_SECRET
-};
 
-const app = express();
-const client = new line.Client(config);
+/* =======================
+   เพิ่มการบ้าน
+======================= */
+app.post("/add", async (req, res) => {
+  try {
+    const { userId, subject, topic, dueDate } = req.body;
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(express.static("public"));
-
-app.post("/webhook", line.middleware(config), (req, res) => {
-  res.status(200).end();
-  Promise.all(req.body.events.map(handleEvent));
-});
-
-async function handleEvent(event) {
-  if (event.type !== "message" || event.message.type !== "text") {
-    return null;
-  }
-
-  if (event.message.text === "ดูการบ้าน") {
-    const userId = event.source.userId;
-    const list = await Homework.find({ userId });
-
-    if (list.length === 0) {
-      return client.replyMessage(event.replyToken, {
-        type: "text",
-        text: "ยังไม่มีการบ้าน"
-      });
-    }
-
-    let message = "📚 รายการการบ้าน\n\n";
-    list.forEach((hw, i) => {
-      message += `${i+1}. ${hw.subject} - ${hw.topic}\nกำหนดส่ง: ${hw.dueDate}\n\n`;
+    const newHomework = new Homework({
+      userId,
+      subject,
+      topic,
+      dueDate
     });
 
-    return client.replyMessage(event.replyToken, {
-      type: "text",
-      text: message
-    });
+    await newHomework.save();
+    res.json({ message: "Added ✅" });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
-
-  return null;
-}
-
-app.post("/save-homework", async (req, res) => {
-  const { userId, subject, topic, dueDate } = req.body;
-
-  await Homework.create({
-    userId,
-    subject,
-    topic,
-    dueDate
-  });
-
-  res.json({ success: true });
 });
 
-app.get("/get-homework/:userId", async (req, res) => {
-  const data = await Homework.find({ userId: req.params.userId });
-  res.json(data);
+
+/* =======================
+   ดึงการบ้าน (เรียงใกล้สุดก่อน)
+   และแสดงเฉพาะที่ยังไม่ส่ง
+======================= */
+app.get("/homework/:userId", async (req, res) => {
+  try {
+    const data = await Homework.find({
+      userId: req.params.userId,
+      completed: false
+    }).sort({ dueDate: 1 });   // ✅ เรียงวันใกล้สุดก่อน
+
+    res.json(data);
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-app.delete("/delete-homework/:id", async (req, res) => {
-  await Homework.findByIdAndDelete(req.params.id);
-  res.json({ success: true });
+
+/* =======================
+   เช็กว่าส่งแล้ว
+======================= */
+app.put("/complete/:id", async (req, res) => {
+  try {
+    await Homework.findByIdAndUpdate(req.params.id, {
+      completed: true
+    });
+
+    res.json({ message: "Completed ✅" });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
+
+
+/* =======================
+   ลบงาน
+======================= */
+app.delete("/delete/:id", async (req, res) => {
+  try {
+    await Homework.findByIdAndDelete(req.params.id);
+    res.json({ message: "Deleted ❌" });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 
 const PORT = process.env.PORT || 3000;
-
-
-app.listen(PORT, () => {
-  console.log("Server running on port " + PORT);
-});
+app.listen(PORT, () => console.log("Server running on port", PORT));

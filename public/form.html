@@ -1,50 +1,115 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>เพิ่มการบ้าน</title>
+  <title>Homework Tracker</title>
+  <style>
+    body {
+      font-family: Arial;
+      padding: 20px;
+      background: #f4f6ff;
+    }
 
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    h1 {
+      text-align: center;
+      color: #333;
+    }
 
-  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      background: white;
+      border-radius: 10px;
+      overflow: hidden;
+    }
 
+    th {
+      background: #6c63ff;
+      color: white;
+      padding: 10px;
+    }
 
+    td {
+      padding: 10px;
+      text-align: center;
+    }
+
+    tr:nth-child(even) {
+      background: #f2f2f2;
+    }
+
+    button {
+      padding: 5px 10px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .done {
+      background: #28a745;
+      color: white;
+    }
+
+    .delete {
+      background: #dc3545;
+      color: white;
+    }
+  </style>
 </head>
 
+
 <body>
-  <h2>📚 เพิ่มการบ้าน</h2>
 
-  <form id="form">
-    <input id="subject" placeholder="📖 วิชา" required><br><br>
-    <input id="topic" placeholder="✏️ เรื่อง" required><br><br>
+<h1>📚 ตารางการบ้าน</h1>
 
-    <label>📅 กำหนดส่ง</label><br>
-    <input type="date" id="dueDate" required><br><br>
-
-    <button type="submit">บันทึกการบ้าน</button>
-  </form>
+<table>
+  <thead>
+    <tr>
+      <th>วิชา</th>
+      <th>หัวข้อ</th>
+      <th>กำหนดส่ง</th>
+      <th>จัดการ</th>
+    </tr>
+  </thead>
+  <tbody id="homeworkTable"></tbody>
+</table>
 
 <script>
-liff.init({ liffId: "2009308037-Gdt715vP" });
+const userId = "demoUser";
 
-document.getElementById("form").addEventListener("submit", async e => {
-  e.preventDefault();
+async function loadHomework() {
+  const res = await fetch(`/homework/${userId}`);
+  const data = await res.json();
 
-  const profile = await liff.getProfile();
+  const table = document.getElementById("homeworkTable");
+  table.innerHTML = "";
 
-  await fetch("/save-homework", {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({
-      userId: profile.userId,
-      subject: subject.value,
-      topic: topic.value,
-      dueDate: dueDate.value
-    })
+  data.forEach(hw => {
+    table.innerHTML += `
+      <tr>
+        <td>${hw.subject}</td>
+        <td>${hw.topic}</td>
+        <td>${new Date(hw.dueDate).toLocaleDateString()}</td>
+        <td>
+          <button class="done" onclick="complete('${hw._id}')">ส่งแล้ว</button>
+          <button class="delete" onclick="removeHW('${hw._id}')">ลบ</button>
+        </td>
+      </tr>
+    `;
   });
+}
 
-  alert("บันทึกเรียบร้อย!");
-  liff.closeWindow();
-});
+async function complete(id) {
+  await fetch(`/complete/${id}`, { method: "PUT" });
+  loadHomework();
+}
+
+async function removeHW(id) {
+  await fetch(`/delete/${id}`, { method: "DELETE" });
+  loadHomework();
+}
+
+loadHomework();
 </script>
 
 </body>
