@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>เพิ่มการบ้าน</title>
+</head>
+<body>
+
+<h2>📚 เพิ่มการบ้าน</h2>
+
+<form id="form">
+  <input id="subject" placeholder="วิชา" required><br><br>
+  <input id="topic" placeholder="เรื่อง" required><br><br>
+  <input type="date" id="dueDate" required><br><br>
+  <button type="submit">บันทึก</button>
+</form>
+
+<script>
+document.getElementById("form").addEventListener("submit", async e => {
+  e.preventDefault();
+
+  await fetch("/add", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      userId: "demoUser",
+      subject: subject.value,
+      topic: topic.value,
+      dueDate: dueDate.value
+    })
+  });
+
+  alert("เพิ่มสำเร็จ!");
+});
+</script>
+
+</body>
+</html>
